@@ -1,0 +1,169 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:9.6
+    volumes:
+      - ./pg/arf_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433"
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+      PGPORT: 5433
+    restart: always
+  scheduler:
+    image: docker.io/anajaparidze/airflow_spark:airflow_2.1.4-spark_2.4.7
+    depends_on:
+      - postgres
+    ports:
+      - "5433"
+    environment:
+      AIRFLOW__CORE__FERNET_KEY: 8NE6O6RcTJpxcCkuKxOHOExzIJkXkeJKbRie03a69dI=
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql://airflow:airflow@postgres:5433/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor      
+      PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
+    restart: always
+    command: ["bash", "-c", "echo '### Testing connection... '
+                            && python test_db_conn.py 
+                            && echo '### Running DB Init... '
+                            && airflow db init 
+                            && echo '### Starting scheduler... '
+                            && airflow scheduler"]
+    volumes:
+      - ./AirflowEnv/dags:/airflow/dags
+      - ./AirflowEnv/jobs:/airflow/jobs
+      - ./AirflowEnv/logs:/airflow/logs
+      - ./AirflowEnv/data:/airflow/data    
+      - ./AirflowEnv/plugins:/opt/airflow/plugins
+      - ./AirflowEnv/plugins_manager:/opt/airflow/plugins_manager
+      - ./AirflowEnv/airflow.cfg:/opt/airflow/airflow.cfg
+  webserver:
+    image: docker.io/anajaparidze/airflow_spark:airflow_2.1.4-spark_2.4.7
+    depends_on:
+      - scheduler
+    command: ["bash", "-c", "airflow webserver"]
+    ports:
+      - 8080:8080
+    volumes:
+      - airflow_logs:/airflow/logs/
+    environment:
+      AIRFLOW__CORE__FERNET_KEY: 8NE6O6RcTJpxcCkuKxOHOExzIJkXkeJKbRie03a69dI=
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql://airflow:airflow@postgres:5433/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor      
+      PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
+    restart: always
+
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - ./hdfs/namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hive/hadoop-hive.env
+    ports:
+      - "50070:50070"
+    
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - ./hdfs/datanode:/hadoop/dfs/data
+    env_file:
+      - ./hive/hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    ports:
+      - "50075:50075"
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075"
+    env_file:
+      - ./hive/hadoop-hive.env
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hive/hadoop-hive.env
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+    ports:
+      - "10000:10000"
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hive/hadoop-hive.env
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088"
+    ports:
+      - "9083:9083"
+
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    ports:
+      - "5432"
+
+  huedb:
+    image: postgres:12.1-alpine
+    volumes:
+      - ./hive/hive_pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./hive/hadoop-hive.env
+    environment:
+        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
+  
+  hue:
+    image: gethue/hue:4.6.0
+    environment:
+        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./hive/hue-overrides.ini:/usr/share/hue/desktop/conf/hue-overrides.ini
+    links:
+      - huedb
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: docker.io/bitnami/kafka:3.2
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+      
+  pyspark-notebook:
+      image: kublr/pyspark-notebook:spark-2.4.0-hadoop-2.6
+      volumes:
+        - ./notebooks:/home/jovyan/work
+      user: root
+      container_name: pyspark-notebook
+      hostname: pyspark-notebook
+      ports:
+        - 8282:8888             
+        - "4040-4050:4040-4050"
+      environment:
+        JUPYTER_TOKEN: token
+volumes:
+  # pg_data: 
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     o: bind
+  #     device: /d/BigDataPlayground/local_v5/hive_pg_data
+  airflow_logs: {}

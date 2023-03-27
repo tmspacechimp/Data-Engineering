@@ -1,0 +1,124 @@
+version: '2.3'
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        AIRFLOW_VERSION: "2.1"
+        SPARK_VERSION: "2.4.7"
+        HADOOP_VERSION: "3.1.0"
+        SCALA_VERSION: "2.12"
+        PYTHON_VERSION: "3.7"
+        SQLALCHEMY_VERSION: "1.3"
+    ports:
+      - 8080:8080
+    volumes:
+      - //d/BigDataPlayground/sequential/dags:/airflow/dags
+      - //d/BigDataPlayground/sequential/jobs:/airflow/jobs
+      - //d/BigDataPlayground/sequential/data:/airflow/data
+    environment:
+      # This uses sqlite as database by default
+      ENABLE_AIRFLOW_INITDB: "true"
+      AIRFLOW__CORE__FERNET_KEY: 8NE6O6RcTJpxcCkuKxOHOExzIJkXkeJKbRie03a69dI=
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__SCHEDULER__MAX_THREADS: "1"
+      ENABLE_AIRFLOW_RBAC_SETUP_AUTH: "true"
+      AIRFLOW_WEBSERVER_RBAC_USER: airflow
+      AIRFLOW_WEBSERVER_RBAC_PASSWORD: airflow
+      AIRFLOW_WEBSERVER_RBAC_EMAIL: admin@example.com
+      AIRFLOW_WEBSERVER_RBAC_FIRST_NAME: admin
+      AIRFLOW_WEBSERVER_RBAC_LAST_NAME: admin
+    restart: always
+
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - //d/BigDataPlayground/sequential/namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop-hive.env
+    ports:
+      - "50070:50070"
+    
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    volumes:
+      - //d/BigDataPlayground/sequential/datanode:/hadoop/dfs/data
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"
+    ports:
+      - "50075:50075"
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075"
+    env_file:
+      - ./hadoop-hive.env
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+    ports:
+      - "10000:10000"
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088"
+    ports:
+      - "9083:9083"
+
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    ports:
+      - "5432:5432"
+
+  huedb:
+    image: postgres:12.1-alpine
+    volumes:
+      - //d/BigDataPlayground/sequential/hive_pg_data:/var/lib/postgresql/data/
+    ports:
+      - "5432"
+    env_file:
+      - ./hadoop-hive.env
+    environment:
+        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"
+  
+  hue:
+    image: gethue/hue:4.6.0
+    environment:
+        SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./hue-overrides.ini:/usr/share/hue/desktop/conf/hue-overrides.ini
+    links:
+      - huedb
+
+  pyspark-notebook:
+      image: kublr/pyspark-notebook:spark-2.4.0-hadoop-2.6
+      volumes:
+        - //d/BigDataPlayground/local/notebooks:/jupyter
+      user: root
+      container_name: pyspark-notebook
+      hostname: pyspark-notebook
+      ports:
+        - 8282:8888             
+        - "4040-4050:4040-4050"
+      environment:
+        JUPYTER_TOKEN: token
+
+volumes:
+  logs-volume:
