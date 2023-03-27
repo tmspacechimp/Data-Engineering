@@ -1,0 +1,29 @@
+﻿employeeID,first name,last name,job description,job_type,is_remote_employee,salary,manager_id,employement_start_date,employement_end_date,effective_date
+1,Conor,Bautista,intern,part-time,0,500,9,20130901,null,20-Aug-14
+1,Conor,Bautista,intern,part-time,0,500,9,20130901,null,21-Aug-14
+1,Conor,Bautista,intern,part-time,0,500,9,20130901,null,22-Aug-14
+1,Conor,Bautista,intern,part-time,0,500,9,20130901,null,23-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,24-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,25-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,26-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,27-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,28-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,29-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,30-Aug-14
+1,Conor,Bautista,junior data steward,full-time,1,2000,9,20130901,null,31-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,5000,11,20140101,null,20-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,5000,11,20140101,null,21-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,5000,11,20140101,null,22-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,5000,11,20140101,null,23-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,5000,11,20140101,null,24-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,5000,11,20140101,null,25-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,6000,12,20140101,null,26-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,6000,12,20140101,null,27-Aug-14
+2,Ella-May,Chadwick,data analyst,full-time,0,6000,12,20140101,20140828,28-Aug-14
+3,Jack,Wise,master data architect,part-time,1,10000,5,20140825,null,25-Aug-14
+3,Jack,Wise,master data architect,part-time,1,10000,5,20140825,null,26-Aug-14
+3,Jack,Wise,master data architect,part-time,1,10000,5,20140825,null,27-Aug-14
+3,Jack,Wise,master data architect,full-time,0,10000,5,20140825,null,28-Aug-14
+3,Jack,Wise,master data architect,full-time,0,10000,5,20140825,null,29-Aug-14
+3,Jack,Wise,master data architect,full-time,0,17000,7,20140825,null,30-Aug-14
+3,Jack,Wise,master data architect,full-time,0,17000,7,20140825,null,31-Aug-14

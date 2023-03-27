@@ -1,0 +1,11 @@
+add applier X
+add updateCommits X
+add line in startElection
+add lines checkAsCandidate
+add lines checkAsLeader
+add lines start
+add lines to heartbeatsender
+add updatelogs X
+add lines to appendentries X
+add logIsUpToDate
+add lines to requestvote

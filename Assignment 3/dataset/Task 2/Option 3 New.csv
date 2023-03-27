@@ -1,0 +1,3 @@
+﻿employeeID,first name,last name,job description,job_type,is_remote_employee,salary,manager_id,employement_start_date,employement_end_date,effective_date
+1,Conor,Bautista,intern,part-time,0,500,10,20130901,null,20-Aug-14
+3,Jack,Wise,master data architect,full-time,0,17000,7,20140825,null,20-Aug-14

@@ -1,0 +1,10 @@
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  <dl>
+    {{ render_field(form.param1) }}
+    {{ render_field(form.param2) }}
+    {{ render_field(form.param3) }}
+    {{ render_field(form.param4) }}
+  </dl>
+  <p><input type=submit value=Fetch>
+</form>
