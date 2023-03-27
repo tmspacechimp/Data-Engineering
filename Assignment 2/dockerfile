@@ -1,0 +1,4 @@
+FROM jupyter/base-notebook:notebook-6.3.0
+ENV JUPYTER_TOKEN=ABC123456
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt

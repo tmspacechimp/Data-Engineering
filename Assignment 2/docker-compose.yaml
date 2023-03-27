@@ -1,0 +1,12 @@
+version: '3'
+services:
+  notebook:
+    build: .
+    restart: always
+    container_name: jupyterhub-pd
+    environment:
+      - JUPYTER_TOKEN=ABC123456
+    ports:
+      - '8888:8888'
+    volumes:
+      - ./Mount:/home/jovyan/work
